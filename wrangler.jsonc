@@ -5,11 +5,6 @@
   "compatibility_date": "2025-04-01",
   "compatibility_flags": ["nodejs_compat"],
 
-  "assets": {
-    "directory": "./build/client",
-    "binding": "ASSETS"
-  },
-
   "vars": {
     "CHECK_POLL_INTERVAL_SECONDS": "60",
     "OFFICIAL_STATUS_CHECK_INTERVAL_SECONDS": "300",

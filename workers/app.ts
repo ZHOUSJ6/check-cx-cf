@@ -5,20 +5,25 @@
  *   - PollerDO (singleton durable object) for the health-check poller
  *   - scheduled() handler (Cron) that wakes the PollerDO
  *
- * Pattern: @cloudflare/vite-plugin + reactRouter cloudflare preset.
- * The RRv7 server build is imported via the "virtual:react-router/server-build"
- * module injected by @react-router/dev at build time.
+ * Pattern: @cloudflare/vite-plugin + reactRouter. The virtual
+ * react-router/server-build module is resolved by the vite plugin at build time
+ * and bundled into this Worker.
  */
 
 import { createHonoApp } from "#/api/app";
 import { createRequestHandler } from "react-router";
-import type { ServerBuild } from "react-router";
 
 // Re-export the DO class so wrangler can bind it (matches wrangler.jsonc
 // durable_objects.bindings[].class_name = "PollerDO").
 export { PollerDO } from "#/do/poller-do";
 
 const api = createHonoApp();
+
+// Lazy import of the RRv8 server build (virtual module, resolved at build time).
+const requestHandler = createRequestHandler(
+  () => import("virtual:react-router/server-build"),
+  import.meta.env.MODE,
+);
 
 export default {
   async fetch(request, env, ctx): Promise<Response> {
@@ -29,14 +34,11 @@ export default {
       return api.fetch(request, env, ctx);
     }
 
-    // React Router SSR + static assets. The virtual module is injected by
-    // @react-router/dev at build time.
-    // @ts-expect-error — virtual module resolved by the Vite build
-    const build = (await import("virtual:react-router/server-build")) as ServerBuild;
-    const handler = createRequestHandler(build);
-    return handler(request, {
-      cloudflare: { env, ctx, cf: request.cf },
-    });
+    // React Router SSR. env/ctx are accessed in loaders via
+    // `import { env } from "cloudflare:workers"`.
+    void env;
+    void ctx;
+    return requestHandler(request);
   },
 
   async scheduled(_event, env, ctx): Promise<void> {

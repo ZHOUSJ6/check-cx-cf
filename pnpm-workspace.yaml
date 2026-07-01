@@ -2,6 +2,10 @@ allowBuilds:
   esbuild: set this to true or false
   sharp: set this to true or false
   workerd: set this to true or false
+minimumReleaseAgeExclude:
+  - '@cloudflare/vite-plugin@1.42.4'
+  - miniflare@4.20260630.0
+  - wrangler@4.106.0
 onlyBuiltDependencies:
   - esbuild
   - workerd

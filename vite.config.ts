@@ -1,20 +1,21 @@
 import { reactRouter } from "@react-router/dev/vite";
-import { cloudflareDevProxy } from "@react-router/dev/vite/cloudflare";
+import { cloudflare } from "@cloudflare/vite-plugin";
 import { defineConfig } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
 import tailwindcss from "@tailwindcss/vite";
 
-// React Router v7 + Cloudflare Workers (single Worker, SSR + assets).
-// cloudflareDevProxy proxies local workerd bindings (read from wrangler.jsonc)
-// into loaders/actions as context.cloudflare during dev.
+// React Router v8 + Cloudflare Workers (single Worker, SSR + assets).
+// cloudflare() plugin bundles workers/app.ts and injects context.cloudflare
+// into loaders automatically. SSR runs in the "ssr" vite environment.
 export default defineConfig({
   plugins: [
-    cloudflareDevProxy(),
-    reactRouter(),
+    cloudflare({ viteEnvironment: { name: "ssr" } }),
     tailwindcss(),
-    tsconfigPaths(),
+    reactRouter(),
   ],
-  build: {
-    sourcemap: true,
+  resolve: {
+    alias: {
+      "~/": "/app/",
+      "#/": "/src/",
+    },
   },
 });
