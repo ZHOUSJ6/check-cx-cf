@@ -1,0 +1,46 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+build/
+.worker/
+.output/
+.vite/
+
+# cloudflare / wrangler
+.wrangler/
+.dev.vars
+.dev.vars.*
+*.dev.vars
+
+# drizzle
+# (keep drizzle/ migrations committed)
+
+# env
+.env
+.env.*
+!.env.example
+
+# typescript
+*.tsbuildinfo
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# os
+.DS_Store
+Thumbs.db
+
+# editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# IDE-private caches
+.zcode/
+
+# trellis workspace (keep .trellis committed except workspace journals if private)
+# .trellis/workspace/

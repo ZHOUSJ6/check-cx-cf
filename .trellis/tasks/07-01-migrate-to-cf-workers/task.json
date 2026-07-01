@@ -1,0 +1,29 @@
+{
+  "id": "migrate-to-cf-workers",
+  "name": "migrate-to-cf-workers",
+  "title": "Migrate check-cx + check-cx-admin to Cloudflare Workers",
+  "description": "",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "ZHOUSJ",
+  "assignee": "ZHOUSJ",
+  "createdAt": "2026-07-01",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "07-01-dashboard-cf-workers",
+    "07-01-admin-cf-workers"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

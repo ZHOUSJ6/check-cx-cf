@@ -1,0 +1,49 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "check-cx",
+  "main": "./build/server/index.js",
+  "compatibility_date": "2025-04-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "assets": {
+    "directory": "./build/client",
+    "binding": "ASSETS"
+  },
+
+  "vars": {
+    "CHECK_POLL_INTERVAL_SECONDS": "60",
+    "OFFICIAL_STATUS_CHECK_INTERVAL_SECONDS": "300",
+    "CHECK_CONCURRENCY": "5",
+    "HISTORY_RETENTION_DAYS": "30"
+  },
+
+  "durable_objects": {
+    "bindings": [
+      { "name": "POLLER", "class_name": "PollerDO" }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["PollerDO"]
+    }
+  ],
+
+  "triggers": {
+    "crons": ["* * * * *"]
+  },
+
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+
+  "env": {
+    "staging": {
+      "name": "check-cx-staging",
+      "vars": {
+        "CHECK_POLL_INTERVAL_SECONDS": "60"
+      }
+    }
+  }
+}
