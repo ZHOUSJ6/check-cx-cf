@@ -36,7 +36,6 @@ export default {
 
     // React Router SSR. env/ctx are accessed in loaders via
     // `import { env } from "cloudflare:workers"`.
-    void env;
     void ctx;
     return requestHandler(request);
   },

@@ -25,7 +25,7 @@ This guide documents critical dependency version constraints that must be follow
 |---------|---------|----------|-------|
 | `react` | `^19.x` | Core | React 19 with concurrent features |
 | `react-dom` | `^19.x` | Core | Must match React version |
-| `react-router` | `^7.x` | Routing | React Router v7 with SSR support |
+| `react-router` | `8.x` | Routing | React Router v8 with SSR support. **Note:** the create-cloudflare template and `@cloudflare/vite-plugin` 1.42+ now require v8; v7 causes client-manifest ordering failures under vite 8 |
 | `hono` | `^4.x` | Backend | Cloudflare Workers web framework |
 | `@libsql/client` | See below | Database | Check compat with your Vite + unenv version |
 | `drizzle-orm` | `^0.45.x` | Database | ORM for libsql/Turso |
@@ -38,14 +38,19 @@ This guide documents critical dependency version constraints that must be follow
 | Package | Version | Category | Notes |
 |---------|---------|----------|-------|
 | `typescript` | `^5.x` | Language | TypeScript 5.x |
-| `vite` | `^6.x` | Build | Vite 6.x bundler |
-| `@cloudflare/vite-plugin` | `>=1.21.0` | Build | Must be >= 1.21.0 for React Router v7 |
-| `@react-router/dev` | `^7.x` | Build | Must match react-router version |
+| `vite` | `^8.x` | Build | **Vite 8.x** (rolldown). `@cloudflare/vite-plugin` 1.42+ requires the Environment API; vite 6 produces broken client→SSR manifest ordering |
+| `@cloudflare/vite-plugin` | `^1.42.4` | Build | 1.42+ bundles the custom worker entry with the virtual react-router server-build resolved |
+| `@react-router/dev` | `8.x` | Build | Must match react-router version |
 | `tailwindcss` | `^4.x` | Styling | Tailwind CSS v4 |
 | `@tailwindcss/vite` | `^4.x` | Styling | Vite plugin for Tailwind v4 |
 | `drizzle-kit` | `^0.31.x` | Database | Migration tool for Drizzle |
-| `wrangler` | `^4.x` | Deploy | Cloudflare Workers CLI |
-| `@cloudflare/workers-types` | Latest | Types | Workers type definitions |
+| `wrangler` | `^4.106.x` | Deploy | `@cloudflare/vite-plugin` 1.42+ peer-requires wrangler ^4.106 |
+| `@types/react` | `^19.x` | Types | Must match React version |
+| `@types/react-dom` | `^19.x` | Types | Must match React DOM version |
+
+> **Note:** `@cloudflare/workers-types` is **no longer needed**. `wrangler types`
+> generates runtime types into `worker-configuration.d.ts` (per wrangler's own
+> guidance). Do not add `@cloudflare/workers-types` to `tsconfig` `types`.
 | `@types/react` | `^19.x` | Types | Must match React version |
 | `@types/react-dom` | `^19.x` | Types | Must match React DOM version |
 
@@ -88,30 +93,55 @@ export function createDb(env: DatabaseEnv): LibSQLDatabase<typeof schema> {
 
 ---
 
-### @cloudflare/vite-plugin - >= 1.21.0
+### @cloudflare/vite-plugin - ^1.42.4 + cloudflare() plugin (NOT cloudflareDevProxy)
 
 ```bash
-pnpm add -D @cloudflare/vite-plugin@^1.21.0
+pnpm add -D @cloudflare/vite-plugin@^1.42.4 wrangler@^4.106.0 vite@^8.0.0
 ```
 
-**Why >= 1.21.0?**
+**Use `cloudflare()` from `@cloudflare/vite-plugin`, not `cloudflareDevProxy`**
+from `@react-router/dev/vite/cloudflare`. The `cloudflare()` plugin bundles
+the custom worker entry (`workers/app.ts`) and resolves the virtual
+`react-router/server-build` module at build time. It is the only setup that
+produces a deployable Worker with a custom entry (for DO / `scheduled`).
 
-Older versions have compatibility issues with React Router v7 and workerd:
+```ts
+// vite.config.ts
+import { cloudflare } from "@cloudflare/vite-plugin";
+import { reactRouter } from "@react-router/dev/vite";
+import { defineConfig } from "vite";
 
+export default defineConfig({
+  plugins: [
+    cloudflare({ viteEnvironment: { name: "ssr" } }),
+    reactRouter(),
+  ],
+  resolve: { alias: { "~/": "/app/", "#/": "/src/" } }, // worker env doesn't read tsconfig paths
+});
 ```
-Named export 'experimental_maybeStartOrUpdateRemoteProxySession' not found
-```
+
+**Critical: requires Vite 8 (rolldown).** On Vite 6 the SSR environment reads
+the client manifest before it is written → `ENOENT build/client/.vite/manifest.json`.
+
+**Custom `app/entry.server.tsx` is required** — the default `@react-router/node`
+entry uses `renderToPipeableStream` (Node-only, absent on Workers). Use
+`renderToReadableStream` from `react-dom/server` (see the create-cloudflare
+react-router template).
+
+**`wrangler.jsonc` must NOT set `assets`** when using this plugin — the plugin
+manages static assets automatically. Setting it causes manifest resolution issues.
 
 ---
 
-### react-router + @react-router/dev - Version Match
+### react-router + @react-router/dev - Version Match (v8)
 
 ```bash
-pnpm add react-router@^7.x
-pnpm add -D @react-router/dev@^7.x
+pnpm add react-router@8.0.0
+pnpm add -D @react-router/dev@8.0.0
 ```
 
-**These versions MUST match.** Mismatched versions cause build errors.
+**These versions MUST match.** The create-cloudflare react-router template
+now ships v8; v7 + vite-plugin 1.42+ is not a working combination.
 
 ---
 

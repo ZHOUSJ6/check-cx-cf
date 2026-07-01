@@ -462,3 +462,54 @@ All clamps identical to source. Secrets (`DATABASE_AUTH_TOKEN`,
 - Whether Cache API edge-locality causes cross-region dashboard staleness
   (observe post-deploy; switch specific caches to KV if needed).
 - Exact RRv7 theme-persistence cookie shape (minor).
+
+## 12. Implementation deviations (recorded during Phase A–E)
+
+Discovered while implementing; deviate from the original spec/version plan
+but are required for a working build. Captured here so the spec can be
+updated in a follow-up `trellis-update-spec` pass.
+
+### 12.1 React Router v8 + Vite 8 + Wrangler 4.106 (spec pinned v7/vite6)
+
+The spec (`dependency-versions.md`) pinned `react-router ^7`, `vite ^6`,
+`@cloudflare/vite-plugin >=1.21.0`. In practice:
+
+- `@cloudflare/vite-plugin` 1.42+ uses Vite's Environment API, which only
+  produces correct build ordering (client manifest before SSR worker build)
+  on **Vite 8** (rolldown). On Vite 6 the SSR environment read the client
+  manifest before it was written → `ENOENT build/client/.vite/manifest.json`.
+- The official `create-cloudflare` react-router template now defaults to
+  **react-router v8 + vite 8 + wrangler ^4.106 + plugin ^1.42.4**. That is
+  the verified combination; we adopted it.
+- Consequence: spec should be updated to `react-router 8.x`, `vite ^8`,
+  `wrangler ^4.106`, `@cloudflare/vite-plugin ^1.42.4`.
+
+### 12.2 Custom entry.server.tsx (renderToReadableStream)
+
+RRv8's default server entry (via `@react-router/node`) uses
+`renderToPipeableStream`, which does not exist on Workers. A custom
+`app/entry.server.tsx` using `renderToReadableStream` is required — matches
+the official template.
+
+### 12.3 Vite resolve.alias instead of tsconfig path plugin
+
+The worker SSR environment bundle does not pick up `tsconfig` `paths`
+(`#/`, `~/`) via `resolve.tsconfigPaths`. Declared explicitly as
+`resolve.alias` in `vite.config.ts`.
+
+### 12.4 env access via `cloudflare:workers` import (not context.cloudflare)
+
+RRv8 middleware requires `getLoadContext` to return a `RouterContextProvider`;
+the manual `{ cloudflare: { env, ctx } }` context shape is invalid. Loaders
+therefore access `env` via `import { env } from "cloudflare:workers"` instead.
+`ctx.waitUntil` is unavailable in SSR loaders → cache writeback uses a no-op
+shim (acceptable: the DO-backed API path handles fresh writes).
+
+### 12.5 Scheduled-handler testing
+
+`wrangler dev`'s `/__scheduled` endpoint routes through the fetch handler and
+hits RRv8 (404) rather than the `scheduled()` handler. The Cron→DO→alarm
+pipeline was verified instead via a temporary `/__trigger-tick` route that
+calls `env.POLLER.get(id).fetch("https://do/wake")`. **Verified**: DO alarm
+fired, `runTick` executed, history row written to Turso with sanitized
+api_key in the error message (defense #2 confirmed).
