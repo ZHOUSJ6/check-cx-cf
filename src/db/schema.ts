@@ -54,7 +54,14 @@ export const healthStatuses = [
   "validation_failed",
   "error",
 ] as const;
-export type HealthStatus = (typeof healthStatuses)[number];
+
+/**
+ * Stored health statuses (the CHECK constraint allows exactly these).
+ * The broader `HealthStatus` below adds the synthetic display-only
+ * "maintenance" state used by CheckResult when a config is in maintenance.
+ */
+export type StoredHealthStatus = (typeof healthStatuses)[number];
+export type HealthStatus = StoredHealthStatus | "maintenance";
 
 export const availabilityPeriods = ["7d", "15d", "30d"] as const;
 export type AvailabilityPeriod = (typeof availabilityPeriods)[number];
