@@ -19,32 +19,30 @@ interface SessionUser {
   groupName: string | null;
 }
 
-// Loader: verify Better Auth session via the API; redirect to /login if none.
-export async function loader({ request }: Route.LoaderArgs): Promise<{ user: SessionUser } | Response> {
-  const origin = new URL(request.url).origin;
-  const res = await fetch(`${origin}/api/auth/get-session`, {
-    headers: { cookie: request.headers.get("cookie") ?? "" },
-  });
-
-  if (!res.ok) {
+// Loader: read the session user injected by the Worker entry (x-auth-user
+// header). The entry resolves the Better Auth session before delegating to
+// RRv8, since SSR loaders can't reliably access env or self-fetch cookies.
+export async function loader({
+  request,
+}: Route.LoaderArgs): Promise<{ user: SessionUser } | Response> {
+  const authHeader = request.headers.get("x-auth-user");
+  if (!authHeader) {
     return new Response(null, { status: 302, headers: { Location: "/login" } });
   }
 
-  const session = (await res.json()) as { user?: { id: string; email: string; name?: string | null } } | null;
-  if (!session?.user) {
+  try {
+    const u = JSON.parse(authHeader) as { id: string; email: string; name: string | null };
+    return {
+      user: {
+        email: u.email,
+        displayName: u.name ?? u.email.split("@")[0] ?? "管理员",
+        role: "admin",
+        groupName: null,
+      },
+    };
+  } catch {
     return new Response(null, { status: 302, headers: { Location: "/login" } });
   }
-
-  // The admin middleware already validated the user via the session. We don't
-  // need the system payload here; admin pages surface 403 as needed for scope.
-  return {
-    user: {
-      email: session.user.email,
-      displayName: session.user.name ?? session.user.email.split("@")[0] ?? "管理员",
-      role: "admin", // refined below if needed
-      groupName: null,
-    },
-  };
 }
 
 const NAV_ITEMS = [
@@ -105,7 +103,7 @@ export default function DashboardLayout() {
               <p className="truncate text-[10px] text-muted-foreground">{user.email}</p>
             </div>
             <a
-              href="/api/auth/signout"
+              href="/api/auth/sign-out"
               className="rounded-md border border-border/40 px-2 py-1 text-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               登出

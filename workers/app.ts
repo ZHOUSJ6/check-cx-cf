@@ -1,25 +1,20 @@
 /**
  * Worker entry — single Cloudflare Worker combining:
- *   - React Router v7 (SSR + assets) for non-API routes
+ *   - React Router v8 (SSR + assets) for non-API routes
  *   - Hono API app for /api/*
  *   - PollerDO (singleton durable object) for the health-check poller
  *   - scheduled() handler (Cron) that wakes the PollerDO
- *
- * Pattern: @cloudflare/vite-plugin + reactRouter. The virtual
- * react-router/server-build module is resolved by the vite plugin at build time
- * and bundled into this Worker.
  */
 
 import { createHonoApp } from "#/api/app";
 import { createRequestHandler } from "react-router";
+import { createAuth } from "#/auth";
 
-// Re-export the DO class so wrangler can bind it (matches wrangler.jsonc
-// durable_objects.bindings[].class_name = "PollerDO").
+// Re-export the DO class so wrangler can bind it.
 export { PollerDO } from "#/do/poller-do";
 
 const api = createHonoApp();
 
-// Lazy import of the RRv8 server build (virtual module, resolved at build time).
 const requestHandler = createRequestHandler(
   () => import("virtual:react-router/server-build"),
   import.meta.env.MODE,
@@ -34,15 +29,42 @@ export default {
       return api.fetch(request, env, ctx);
     }
 
-    // React Router SSR. env/ctx are accessed in loaders via
-    // `import { env } from "cloudflare:workers"`.
-    void ctx;
+    // For SSR pages under /dashboard/* or /login, resolve the Better Auth
+    // session here (we have env) and pass user info to RRv8 loaders via a
+    // custom header. RRv8 middleware mode blocks context.cloudflare, so we
+    // inject the session through a request header instead.
+    if (url.pathname.startsWith("/dashboard") || url.pathname === "/login") {
+      const cookie = request.headers.get("cookie");
+      if (cookie) {
+        try {
+          const auth = createAuth(env, url.origin);
+          const session = await auth.api.getSession({
+            headers: new Headers({ cookie }),
+          } as Parameters<typeof auth.api.getSession>[0]);
+          if (session) {
+            // Workers Request headers can be immutable; create a fresh Request
+            // with merged headers so the x-auth-user header reaches the loader.
+            const mergedHeaders = new Headers(request.headers);
+            mergedHeaders.set(
+              "x-auth-user",
+              JSON.stringify({
+                id: session.user.id,
+                email: session.user.email,
+                name: session.user.name ?? null,
+              }),
+            );
+            return requestHandler(new Request(request, { headers: mergedHeaders }));
+          }
+        } catch (e) {
+          console.error("[check-cx] SSR session resolve failed:", e);
+        }
+      }
+    }
+
     return requestHandler(request);
   },
 
   async scheduled(_event, env, ctx): Promise<void> {
-    // Cron (1/min) nudges the singleton PollerDO awake; the DO re-arms its
-    // own alarm to keep precise 60s/300s cadences.
     if (!env.POLLER) {
       return;
     }
