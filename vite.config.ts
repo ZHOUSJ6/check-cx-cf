@@ -16,6 +16,7 @@ export default defineConfig({
     alias: {
       "~/": "/app/",
       "#/": "/src/",
+      "@/": "/app/",
     },
   },
 });

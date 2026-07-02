@@ -110,9 +110,13 @@ Cache API / KV / DO storage, 取决于读写比与一致性需求。
   → 验证: tsc 0 错, build 输出 client + server bundle, dry-run 通过。
 - [x] AC-DASH-7 空库 `drizzle-kit migrate` 建出全部表 + 索引。
   → 验证: dev Turso 11 表 + 13 索引已建并验证。
-- [ ] AC-DASH-8 主题切换、通知横幅、recharts 时间线等前端交互(浏览器手验)。
-  → 部分完成: SSR 渲染验证通过; 精细交互(主题切换/recharts)为后续 UI 增强。
-  注: 当前前端是功能骨架, 完整组件迁移(provider-card/timeline/theme-toggle)留作跟进。
+- [x] AC-DASH-8 主题切换、通知横幅、时间线等前端交互(浏览器手验)。
+  → 验证: 完整迁移源项目全部前端组件 (provider-card / status-timeline /
+  availability-stats / dashboard-view / group-dashboard-view / theme-toggle /
+  notification-banner / dnd-kit 拖拽排序 / oklch 主题 + 网格背景)。
+  浏览器验证: https://check-cx.zhousj.workers.dev 渲染完整 UI, 0 console error。
+  注: next-themes→自建 theme provider; next/link→本地 Link wrapper;
+  recharts 未用 (源项目时间线是自绘 div 段, 非图表库)。
 
 ## 生产部署记录 (Phase F 完成)
 

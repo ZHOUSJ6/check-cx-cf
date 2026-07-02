@@ -9,25 +9,56 @@ import {
 } from "react-router";
 
 import type { Route } from "./+types/root";
+import { ThemeProvider } from "@/components/theme-provider";
+import { NotificationBanner } from "@/components/notification-banner";
+import { cn } from "@/lib/utils";
 
 import "./app.css";
 
 export function links() {
-  return [{ rel: "preconnect", href: "https://fonts.googleapis.com" }];
+  return [
+    { rel: "preconnect", href: "https://fonts.googleapis.com" },
+    {
+      rel: "preconnect",
+      href: "https://fonts.gstatic.com",
+      crossOrigin: "anonymous",
+    },
+    {
+      rel: "stylesheet",
+      href: "https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono:wght@100..900&family=JetBrains+Mono:wght@100..900&display=swap",
+    },
+  ];
 }
+
+// Auto dark mode based on local hour (19:00-07:00), before hydration.
+const themeBootScript = `(()=>{
+  const hour = new Date().getHours();
+  const isDark = hour >= 19 || hour < 7;
+  const root = document.documentElement;
+  root.classList.toggle('dark', isDark);
+  root.style.colorScheme = isDark ? 'dark' : 'light';
+})();`;
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="zh-CN">
+    <html lang="zh-CN" suppressHydrationWarning className={cn("font-mono")}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Check CX</title>
+        <title>LINUX DO - 模型中转状态检测</title>
+        <meta
+          name="description"
+          content="实时检测 OpenAI / Gemini / Anthropic 对话接口的可用性与延迟"
+        />
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         <Meta />
         <Links />
       </head>
-      <body>
-        {children}
+      <body className="antialiased">
+        <ThemeProvider>
+          <NotificationBanner />
+          {children}
+        </ThemeProvider>
         <ScrollRestoration />
         <Scripts />
       </body>

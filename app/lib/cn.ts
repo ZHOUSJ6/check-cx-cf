@@ -1,6 +1,10 @@
-import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
+/**
+ * Tailwind CSS class name 合并工具
+ */
 
-export function cn(...inputs: ClassValue[]): string {
+import {type ClassValue, clsx} from "clsx";
+import {twMerge} from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
