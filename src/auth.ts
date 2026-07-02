@@ -30,6 +30,16 @@ export function createAuth(env: AuthEnv, baseURL: string) {
           github: {
             clientId: env.GITHUB_CLIENT_ID,
             clientSecret: env.GITHUB_CLIENT_SECRET,
+            // Explicit redirectURI per Better Auth docs — required so the OAuth
+            // code-exchange step uses the same redirect as the authorization step.
+            redirectURI: `${baseURL}/api/auth/callback/github`,
+            // GitHub returns email: null on GET /user when the primary email is
+            // private (default for most users). Per Better Auth docs ("Handling
+            // Providers Without Email"), fall back to a stable noreply address
+            // so login succeeds.
+            mapProfileToUser: (profile: { email?: string | null; login?: string; id?: number }) => ({
+              email: profile.email ?? `${profile.login ?? profile.id}@users.noreply.github.com`,
+            }),
           },
         }
       : undefined;
@@ -43,6 +53,7 @@ export function createAuth(env: AuthEnv, baseURL: string) {
   return betterAuth({
     baseURL,
     secret,
+    trustedOrigins: [baseURL],
     database: drizzleAdapter(db, {
       provider: "sqlite",
       schema: {
@@ -55,7 +66,9 @@ export function createAuth(env: AuthEnv, baseURL: string) {
     emailAndPassword: {
       enabled: true,
     },
-    ...(github ? { socialProviders: github } : {}),
+    // GithubOptions types don't declare redirectURI/mapProfileToUser, but both
+    // are valid at runtime (per Better Auth docs). Cast to satisfy tsc.
+    ...(github ? { socialProviders: github as never } : {}),
     session: {
       cookieCache: {
         enabled: true,
