@@ -262,19 +262,29 @@ export const authAccounts = sqliteTable(
       .references(() => authUsers.id, { onDelete: "cascade" }),
     accessToken: text("access_token"),
     refreshToken: text("refresh_token"),
-    expiresAt: integer("expires_at", { mode: "timestamp_ms" }),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: integer("access_token_expires_at", { mode: "timestamp_ms" }),
+    refreshTokenExpiresAt: integer("refresh_token_expires_at", { mode: "timestamp_ms" }),
+    scope: text("scope"),
     password: text("password"),
     createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
   },
-  (t) => [index("idx_account_provider").on(t.providerId)],
+  (t) => [
+    index("idx_account_provider").on(t.providerId),
+    index("account_userId_idx").on(t.userId),
+  ],
 );
 
-export const authVerifications = sqliteTable("verification", {
-  id: text("id").primaryKey(),
-  identifier: text("identifier").notNull(),
-  value: text("value").notNull(),
-  expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
-  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
-});
+export const authVerifications = sqliteTable(
+  "verification",
+  {
+    id: text("id").primaryKey(),
+    identifier: text("identifier").notNull(),
+    value: text("value").notNull(),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+  },
+  (t) => [index("verification_identifier_idx").on(t.identifier)],
+);
