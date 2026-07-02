@@ -4,23 +4,12 @@ import type { Route } from "./+types/login";
 
 interface ActionResult {
   error?: string;
-  success?: boolean;
 }
 
-// Server action: forward credentials to Better Auth sign-in API.
+// Server action: handle email/password sign-in via Better Auth.
+// (GitHub OAuth is initiated client-side — see the GitHub button onClick.)
 export async function action({ request }: Route.ActionArgs): Promise<ActionResult | Response> {
   const formData = await request.formData();
-  const intent = String(formData.get("intent") ?? "signin");
-
-  if (intent === "github") {
-    // Redirect to Better Auth GitHub OAuth start.
-    const origin = new URL(request.url).origin;
-    return new Response(null, {
-      status: 302,
-      headers: { Location: `${origin}/api/auth/signin/social/github` },
-    });
-  }
-
   const email = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
 
@@ -29,7 +18,7 @@ export async function action({ request }: Route.ActionArgs): Promise<ActionResul
   }
 
   const origin = new URL(request.url).origin;
-  const res = await fetch(`${origin}/api/auth/signin/email`, {
+  const res = await fetch(`${origin}/api/auth/sign-in/email`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
@@ -54,6 +43,20 @@ export default function Login() {
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
 
+  // Initiate GitHub OAuth: call Better Auth's sign-in/social endpoint, then
+  // redirect the browser to the GitHub authorization URL it returns.
+  async function handleGitHub() {
+    const res = await fetch("/api/auth/sign-in/social", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider: "github", callbackURL: "/dashboard" }),
+    });
+    const data = (await res.json()) as { url?: string; redirect?: boolean };
+    if (data.url) {
+      window.location.href = data.url;
+    }
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm space-y-6 rounded-2xl border border-border/40 bg-background/60 p-8 backdrop-blur-sm">
@@ -63,7 +66,6 @@ export default function Login() {
         </div>
 
         <Form method="post" className="space-y-4">
-          <input type="hidden" name="intent" value="signin" />
           <div className="space-y-1.5">
             <label htmlFor="email" className="text-xs font-medium text-muted-foreground">
               邮箱
@@ -112,17 +114,14 @@ export default function Login() {
           </div>
         </div>
 
-        <Form method="post">
-          <input type="hidden" name="intent" value="github" />
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="flex h-9 w-full items-center justify-center gap-2 rounded-md border border-input bg-background px-4 text-sm font-medium transition-colors hover:bg-muted disabled:opacity-60"
-          >
-            <Github className="h-4 w-4" />
-            使用 GitHub 登录
-          </button>
-        </Form>
+        <button
+          type="button"
+          onClick={handleGitHub}
+          className="flex h-9 w-full items-center justify-center gap-2 rounded-md border border-input bg-background px-4 text-sm font-medium transition-colors hover:bg-muted"
+        >
+          <Github className="h-4 w-4" />
+          使用 GitHub 登录
+        </button>
       </div>
     </main>
   );
