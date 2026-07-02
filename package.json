@@ -7,7 +7,7 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "build": "react-router typegen && react-router build && wrangler types",
+    "build": "react-router typegen && react-router build && wrangler types && node scripts/patch-wrangler-output.mjs",
     "dev": "react-router dev",
     "start": "wrangler dev",
     "typecheck": "react-router typegen && tsc",
@@ -18,7 +18,8 @@
     "db:studio": "drizzle-kit studio",
     "cf-typegen": "wrangler types",
     "deploy": "pnpm build && wrangler deploy",
-    "dry-run": "pnpm build && wrangler deploy --dry-run"
+    "dry-run": "pnpm build && wrangler deploy --dry-run",
+    "patch:wrangler": "node scripts/patch-wrangler-output.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.83",

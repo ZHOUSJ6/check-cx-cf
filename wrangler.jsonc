@@ -6,9 +6,13 @@
   "compatibility_flags": ["nodejs_compat"],
 
   // Custom domain: Workers manages DNS record + TLS certificate automatically.
+  // Persisted in config — reapplied on every `wrangler deploy`.
   "routes": [
     { "pattern": "cx.020212.xyz", "custom_domain": true }
   ],
+
+  // Disable the *.workers.dev subdomain; serve only via cx.020212.xyz.
+  "workers_dev": false,
 
   "vars": {
     "CHECK_POLL_INTERVAL_SECONDS": "60",
