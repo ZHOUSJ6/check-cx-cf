@@ -58,7 +58,7 @@ export async function resolveAppUser(
   const typedSession = session as unknown as AuthSession;
 
   // Look up the admin_users directory row by auth_user_id.
-  let rows = await db
+  const rows = await db
     .select()
     .from(adminUsers)
     .where(eq(adminUsers.authUserId, typedSession.user.id));

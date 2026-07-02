@@ -35,14 +35,8 @@ export async function loader({ request }: Route.LoaderArgs): Promise<{ user: Ses
     return new Response(null, { status: 302, headers: { Location: "/login" } });
   }
 
-  // Fetch the admin directory entry for role/scope (via admin API, same session).
-  const adminRes = await fetch(`${origin}/api/admin/system`, {
-    headers: { cookie: request.headers.get("cookie") ?? "" },
-  });
-  // We don't strictly need the system payload here; the admin middleware already
-  // validated the user. If system 401s, the user lacks admin directory — but we
-  // still let them in; the admin pages will surface 403 as needed.
-
+  // The admin middleware already validated the user via the session. We don't
+  // need the system payload here; admin pages surface 403 as needed for scope.
   return {
     user: {
       email: session.user.email,

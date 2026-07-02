@@ -1,5 +1,4 @@
 import {
-  type RouteConfig,
   index,
   route,
   layout,
