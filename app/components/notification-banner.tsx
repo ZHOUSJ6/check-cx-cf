@@ -17,8 +17,8 @@ export function NotificationBanner() {
       try {
         const response = await fetch("/api/notifications");
         if (response.ok) {
-          const data = await response.json();
-          setNotifications(data);
+          const data = (await response.json()) as SystemNotificationRow[];
+          setNotifications(Array.isArray(data) ? data : []);
         }
       } catch (error) {
         console.error("Failed to fetch notifications:", error);
@@ -42,6 +42,9 @@ export function NotificationBanner() {
   }
 
   const notification = notifications[currentIndex];
+  if (!notification) {
+    return null;
+  }
 
   const levelStyles = {
     info: "bg-blue-50/90 text-blue-900 border-blue-200 dark:bg-blue-950/50 dark:text-blue-100 dark:border-blue-800",

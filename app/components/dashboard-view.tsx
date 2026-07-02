@@ -614,9 +614,10 @@ export function DashboardView({ initialData }: DashboardViewProps) {
   }, [total]);
 
   const hasMultipleGroups = useMemo(() => {
+    const first = groupedTimelines[0];
     return (
       groupedTimelines.length > 1 ||
-      (groupedTimelines.length === 1 && groupedTimelines[0].groupName !== UNGROUPED_KEY)
+      (groupedTimelines.length === 1 && !!first && first.groupName !== UNGROUPED_KEY)
     );
   }, [groupedTimelines]);
 

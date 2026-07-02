@@ -26,15 +26,19 @@ function systemPrefersDark(): boolean {
   return window.matchMedia("(prefers-color-scheme: dark)").matches;
 }
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("system");
+function readStoredTheme(): Theme {
+  if (typeof window === "undefined") {
+    return "system";
+  }
+  const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
+  if (stored === "light" || stored === "dark" || stored === "system") {
+    return stored;
+  }
+  return "system";
+}
 
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    if (stored === "light" || stored === "dark" || stored === "system") {
-      setThemeState(stored);
-    }
-  }, []);
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [theme, setThemeState] = useState<Theme>(readStoredTheme);
 
   useEffect(() => {
     const isDark = theme === "dark" || (theme === "system" && systemPrefersDark());
