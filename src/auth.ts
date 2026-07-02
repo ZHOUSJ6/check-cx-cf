@@ -66,6 +66,16 @@ export function createAuth(env: AuthEnv, baseURL: string) {
     emailAndPassword: {
       enabled: true,
     },
+    // Allow the same email to be used across email/password and GitHub OAuth.
+    // Without this, signing in via GitHub when an email/password account with
+    // the same email already exists throws `account_not_linked`. (Mirrors
+    // Supabase Auth's default permissive same-email linking.)
+    account: {
+      accountLinking: {
+        enabled: true,
+        trustedProviders: ["email-password", "github"],
+      },
+    },
     // GithubOptions types don't declare redirectURI/mapProfileToUser, but both
     // are valid at runtime (per Better Auth docs). Cast to satisfy tsc.
     ...(github ? { socialProviders: github as never } : {}),
