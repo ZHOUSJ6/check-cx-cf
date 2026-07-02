@@ -5,6 +5,11 @@
   "compatibility_date": "2025-04-01",
   "compatibility_flags": ["nodejs_compat"],
 
+  // Custom domain: Workers manages DNS record + TLS certificate automatically.
+  "routes": [
+    { "pattern": "cx.020212.xyz", "custom_domain": true }
+  ],
+
   "vars": {
     "CHECK_POLL_INTERVAL_SECONDS": "60",
     "OFFICIAL_STATUS_CHECK_INTERVAL_SECONDS": "300",
