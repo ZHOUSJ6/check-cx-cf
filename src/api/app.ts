@@ -7,6 +7,7 @@ import { Hono } from "hono";
 
 import { createDb } from "#/db/client";
 import { authRouter } from "#/api/auth-router";
+import { createAdminApp } from "#/api/admin/app";
 import { statusRouter } from "#/api/status/router";
 import { dashboardRouter } from "#/api/dashboard/router";
 import { groupRouter } from "#/api/group/router";
@@ -38,6 +39,9 @@ export function createHonoApp(): Hono<AppEnv> {
   app.route("/api/group", groupRouter);
   app.route("/api/notifications", notificationsRouter);
   app.route("/api/internal", internalRouter);
+
+  // Admin CRUD API — session-gated, mounted last.
+  app.route("/api/admin", createAdminApp());
 
   return app;
 }
