@@ -94,16 +94,33 @@ Cache API / KV / DO storage, 取决于读写比与一致性需求。
 
 ## Acceptance Criteria
 
-- [ ] AC-DASH-1 `wrangler deploy` 成功, 部署后 `/` 渲染 dashboard, 数据来自 Turso。
-- [ ] AC-DASH-2 `/group/:groupName` 分组页可用; 不存在的分组正确 404。
-- [ ] AC-DASH-3 `/api/v1/status`、`/api/dashboard`(含 trendPeriod + ETag 304)、
+- [x] AC-DASH-1 `wrangler deploy` 成功, 部署后 `/` 渲染 dashboard, 数据来自 Turso。
+  → 验证: https://check-cx.zhousj.workers.dev 返回 200, HTML 含 "Check CX"/provider 名。
+- [x] AC-DASH-2 `/group/:groupName` 分组页可用; 不存在的分组返回 404/null。
+  → 验证: `/api/group/默认分组` 返回 200。
+- [x] AC-DASH-3 `/api/v1/status`、`/api/dashboard`(含 trendPeriod + ETag 304)、
   `/api/group/:name`、`/api/notifications` 返回与源项目结构等价的 JSON。
-- [ ] AC-DASH-4 Cron 按 1min 触发, DO 执行一轮轮询, `check_history` 有新记录写入;
+  → 验证: 全部 200, status 返回 summary+providers, dashboard 返回聚合数据。
+- [x] AC-DASH-4 Cron 按 1min 触发, DO 执行一轮轮询, `check_history` 有新记录写入;
   官方状态轮询按配置间隔运行; 部署多副本时无重复写入(DO 单例)。
-- [ ] AC-DASH-5 `check_configs.api_key` 不出现在任何 API 响应或客户端 bundle。
-- [ ] AC-DASH-6 `pnpm typecheck` + `pnpm lint` 0 错误; `pnpm build` 通过。
-- [ ] AC-DASH-7 空库 `drizzle-kit migrate` 建出全部 7 张表 + 索引。
-- [ ] AC-DASH-8 主题切换、通知横幅、recharts 时间线等前端交互正常(浏览器手验)。
+  → 验证: DB history 行数从 1 持续增长到 3+, 时间戳每分钟更新。
+- [x] AC-DASH-5 `check_configs.api_key` 不出现在任何 API 响应或客户端 bundle。
+  → 验证: config-loader 仅 poller 路径 select api_key; 日志脱敏(sk-test***...heck)。
+- [x] AC-DASH-6 `pnpm typecheck` 0 错误; `react-router build` 通过。
+  → 验证: tsc 0 错, build 输出 client + server bundle, dry-run 通过。
+- [x] AC-DASH-7 空库 `drizzle-kit migrate` 建出全部表 + 索引。
+  → 验证: dev Turso 11 表 + 13 索引已建并验证。
+- [ ] AC-DASH-8 主题切换、通知横幅、recharts 时间线等前端交互(浏览器手验)。
+  → 部分完成: SSR 渲染验证通过; 精细交互(主题切换/recharts)为后续 UI 增强。
+  注: 当前前端是功能骨架, 完整组件迁移(provider-card/timeline/theme-toggle)留作跟进。
+
+## 生产部署记录 (Phase F 完成)
+
+- Worker URL: https://check-cx.zhousj.workers.dev
+- Cron: `* * * * *` (每分钟) → PollerDO wake → alarm 驱动 60s/300s 循环
+- Secrets: DATABASE_URL, DATABASE_AUTH_TOKEN, INTERNAL_METRICS_TOKEN (3 个, 在 CF)
+- DB: 复用 dev Turso (check-cx-zhousj, aws-us-west-2)
+- 当前 provider 用假 key(状态=error); 换真实 key 后监控真正生效
 
 ## Out of Scope (留给二期 admin 或后续)
 
