@@ -1,0 +1,110 @@
+"use client"
+
+import { useLocation } from "react-router"
+import {
+  BellIcon,
+  FolderTreeIcon,
+  GaugeIcon,
+  HistoryIcon,
+  LayoutTemplateIcon,
+  Layers3Icon,
+  ServerCogIcon,
+  TerminalIcon,
+  UserPlusIcon,
+  WaypointsIcon,
+} from "lucide-react"
+
+import { NavUser } from "@/components/nav-user"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar"
+
+const mainItems = [
+  { title: "概览", url: "/dashboard", icon: GaugeIcon },
+  { title: "Provider 配置", url: "/dashboard/configs", icon: ServerCogIcon },
+  { title: "模型配置", url: "/dashboard/models", icon: Layers3Icon, adminOnly: true },
+  { title: "请求模板", url: "/dashboard/templates", icon: LayoutTemplateIcon, adminOnly: true },
+  { title: "分组信息", url: "/dashboard/groups", icon: FolderTreeIcon, adminOnly: true },
+  { title: "系统通知", url: "/dashboard/notifications", icon: BellIcon, adminOnly: true },
+  { title: "允许用户", url: "/dashboard/users", icon: UserPlusIcon, adminOnly: true },
+  { title: "历史记录", url: "/dashboard/history", icon: HistoryIcon },
+  { title: "运行状态", url: "/dashboard/system", icon: WaypointsIcon },
+]
+
+export function AppSidebar({
+  user,
+  ...props
+}: React.ComponentProps<typeof Sidebar> & {
+  user: {
+    name: string
+    email: string
+    avatar?: string | null
+    role: "admin" | "member"
+    groupName?: string | null
+  }
+}) {
+  const location = useLocation(); const pathname = location.pathname
+
+  return (
+    <Sidebar variant="inset" {...props}>
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" render={<a href="/dashboard" />}>
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                <TerminalIcon className="size-4" />
+              </div>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-medium">check-cx-admin</span>
+                <span className="truncate text-xs">Supabase + Next.js</span>
+              </div>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>管理台</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {mainItems
+                .filter((item) => !item.adminOnly || user.role === "admin")
+                .map((item) => {
+                const isActive =
+                  item.url === "/dashboard"
+                    ? pathname === item.url
+                    : pathname.startsWith(item.url)
+                const Icon = item.icon
+
+                return (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton
+                      isActive={isActive}
+                      tooltip={item.title}
+                      render={<a href={item.url} />}
+                    >
+                      <Icon />
+                      <span>{item.title}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarFooter>
+        <NavUser user={user} />
+      </SidebarFooter>
+    </Sidebar>
+  )
+}
