@@ -195,28 +195,25 @@ export function ConfigsTable({ configs, models, returnPath }: ConfigsTableProps)
             : "先勾选配置，再做批量启停、维护切换或删除。"}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button type="submit" name="operation" value="enable" className="hidden" />
-          <Button type="submit" name="operation" value="enable" variant="outline" disabled={!hasSelection}>
+          <Button type="button" variant="outline" disabled={!hasSelection} onClick={() => void runBatch("enable")}>
             批量启用
           </Button>
-          <Button type="submit" name="operation" value="disable" variant="outline" disabled={!hasSelection}>
+          <Button type="button" variant="outline" disabled={!hasSelection} onClick={() => void runBatch("disable")}>
             批量停用
           </Button>
           <Button
-            type="submit"
-            name="operation"
-            value="maintenance_on"
+            type="button"
             variant="outline"
             disabled={!hasSelection}
+            onClick={() => void runBatch("maintenance_on")}
           >
             批量维护
           </Button>
           <Button
-            type="submit"
-            name="operation"
-            value="maintenance_off"
+            type="button"
             variant="outline"
             disabled={!hasSelection}
+            onClick={() => void runBatch("maintenance_off")}
           >
             取消维护
           </Button>
