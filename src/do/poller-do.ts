@@ -61,6 +61,35 @@ export class PollerDO extends DurableObject<PollerEnv> {
       return Response.json(record);
     }
 
+    // Debug: read DO storage state.
+    if (url.pathname === "/internal/storage-state") {
+      const running = await this.ctx.storage.get<boolean>("running");
+      const lastMainMs = await this.ctx.storage.get<number>("lastMainMs");
+      const lastOfficialMs = await this.ctx.storage.get<number>("lastOfficialMs");
+      const alarm = await this.ctx.storage.getAlarm();
+      return Response.json({
+        running: running ?? false,
+        lastMainMs: lastMainMs ?? 0,
+        lastMainAge: lastMainMs ? Date.now() - lastMainMs : null,
+        lastOfficialMs: lastOfficialMs ?? 0,
+        alarmMs: alarm,
+        alarmIn: alarm ? alarm - Date.now() : null,
+        now: Date.now(),
+      });
+    }
+
+    // Debug: force-run tick immediately.
+    if (url.pathname === "/internal/force-tick") {
+      await this.ctx.storage.put("running", true);
+      await this.ctx.storage.put("lastMainMs", 0);
+      try {
+        await runTickSafely({ env: this.env, ctx: this.ctx });
+      } finally {
+        await this.ctx.storage.put("running", false);
+      }
+      return Response.json({ tickDone: true });
+    }
+
     // Debug / manual trigger: wake the alarm.
     await this.wake();
     return Response.json({ ok: true });
@@ -80,8 +109,16 @@ export class PollerDO extends DurableObject<PollerEnv> {
       (await this.ctx.storage.get<number>(STORAGE_KEYS.lastOfficialMs)) ?? 0;
     const running = (await this.ctx.storage.get<boolean>(STORAGE_KEYS.running)) ?? false;
 
-    // MAIN loop — guarded re-entrancy (replaces globalThis.__checkCxPollerRunning).
-    if (!running && now - lastMainMs >= mainInterval) {
+    // Stuck-guard: if running has been true for more than 5 minutes, the
+    // previous tick crashed or timed out without resetting. Force-clear it.
+    const effectiveRunning = running && lastMainMs > 0 && (now - lastMainMs < 5 * 60 * 1000);
+    if (running && !effectiveRunning) {
+      console.warn("[check-cx] running flag was stuck, clearing");
+      await this.ctx.storage.put(STORAGE_KEYS.running, false);
+    }
+
+    // MAIN loop — guarded re-entrancy.
+    if (!effectiveRunning && now - lastMainMs >= mainInterval) {
       await this.ctx.storage.put(STORAGE_KEYS.running, true);
       await this.ctx.storage.put(STORAGE_KEYS.lastMainMs, now);
       // Run without blocking the alarm: use blockConcurrencyWhile-free path.

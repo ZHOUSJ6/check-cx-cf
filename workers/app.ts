@@ -42,8 +42,6 @@ export default {
             headers: new Headers({ cookie }),
           } as Parameters<typeof auth.api.getSession>[0]);
           if (session) {
-            // Workers Request headers can be immutable; create a fresh Request
-            // with merged headers so the x-auth-user header reaches the loader.
             const mergedHeaders = new Headers(request.headers);
             mergedHeaders.set(
               "x-auth-user",
