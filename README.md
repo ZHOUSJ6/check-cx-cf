@@ -134,6 +134,71 @@ pnpm deploy
 └── wrangler.jsonc          # Cloudflare Workers 配置
 ```
 
+## 致谢
+
+本项目基于以下两个开源项目迁移改造而来，感谢原作者 [@BingZi-233](https://github.com/BingZi-233) 的工作：
+
+- **[BingZi-233/check-cx](https://github.com/BingZi-233/check-cx)** — 监控面板（原基于 Next.js + Supabase + Vercel）
+- **[BingZi-233/check-cx-admin](https://github.com/BingZi-233/check-cx-admin)** — 后台管理（原基于 Next.js + Supabase + Docker）
+
+### 与原项目的差异
+
+本项目将上述两个独立项目合并为单个 Cloudflare Workers 应用，核心改造如下：
+
+| 维度 | 原项目 | 本项目 |
+|---|---|---|
+| 运行时 | Next.js (Node.js) + Vercel/Docker | Cloudflare Workers (workerd) |
+| 前端框架 | Next.js App Router (Server Components) | React Router v8 (client components + SSR) |
+| 后端 | Next.js API Routes / Server Actions | Hono |
+| 数据库 | Supabase (PostgreSQL) | Turso (libSQL / SQLite) |
+| ORM | Supabase JS Client | Drizzle ORM |
+| 认证 | Supabase Auth (OAuth + password) | Better Auth (email/password + GitHub OAuth) |
+| 后台轮询 | Node.js 常驻进程 (`instrumentation.ts`) + DB 租约选主 | Durable Object (alarm 驱动) + Cron Triggers |
+| 缓存 | 模块级 `globalThis` 内存缓存 | Cloudflare Cache API |
+| 部署 | Vercel / Docker Compose | Wrangler (`wrangler deploy`) |
+
+### 具体改造说明
+
+**轮询架构重写**
+
+原项目通过 `instrumentation.ts` 在 Node.js 启动时初始化常驻后台轮询器，配合数据库租约 (`check_poller_leases`) 实现多节点选主。本项目改为 Cron Triggers 每分钟唤醒一个单例 Durable Object，由 DO 的 `alarm()` 方法驱动主轮询（60s）和官方状态轮询（300s）两个循环。DO 天然全局单例，不再需要 DB 租约选主。
+
+**PostgreSQL → SQLite 迁移**
+
+- `uuid` → `text`（`crypto.randomUUID()`）
+- `enum` → `text` + `CHECK` 约束
+- `timestamptz` → `integer`（Unix 毫秒，项目规范）
+- `jsonb` → `text`（JSON 模式）
+- 2 个 PostgreSQL RPC 函数 (`get_recent_check_history` / `prune_check_history`) → Drizzle 查询（窗口函数 + DELETE）
+- `availability_stats` 视图 → 应用层聚合查询
+- 触发器（`update_updated_at` / 类型校验）→ 应用层逻辑
+- RLS 策略 → 移除（由 Hono 中间件接管访问控制）
+
+**Next.js → React Router v8 适配**
+
+- Server Components → client components（`useEffect` + `useState` 获取数据）
+- Server Actions → Hono `/api/admin/*` POST 端点 + 客户端 fetch
+- `next/link` → 普通 `<a>` 标签
+- `next/navigation` (`useRouter` / `usePathname`) → `react-router` (`useNavigate` / `useLocation`) 或 `window.location`
+- `next/font/google` → Google Fonts CSS link
+- `next-themes` → 自建 ThemeProvider（localStorage + 系统偏好）
+- `next/image` → 原生 `<img>`
+- `entry.server.tsx` 使用 `renderToReadableStream`（Workers 无 `renderToPipeableStream`）
+
+**认证系统替换**
+
+Supabase Auth 替换为 Better Auth，使用 `@better-auth/drizzle-adapter` 接入 Turso。Session 表 (`user` / `session` / `account` / `verification`) 与业务表共库。两级权限模型（admin / member）通过 `admin_users` 表桥接 Better Auth 用户与角色。
+
+**合并为单 Worker**
+
+原两个独立项目合并为一个 Workers 应用，通过路由分区：
+- `/` `/group/*` — Dashboard（公开）
+- `/api/v1/*` `/api/dashboard` `/api/group/*` `/api/notifications` — 只读 API（公开）
+- `/api/auth/*` — Better Auth（登录/回调/登出）
+- `/api/admin/*` — 后台 CRUD（会话门禁）
+- `/dashboard/*` — 后台 UI（会话门禁）
+- `/login` — 登录页
+
 ## License
 
 [MIT](LICENSE)
