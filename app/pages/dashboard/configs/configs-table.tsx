@@ -285,12 +285,9 @@ export function ConfigsTable({ configs, models, returnPath }: ConfigsTableProps)
               <AlertDialogFooter>
                 <AlertDialogCancel>取消</AlertDialogCancel>
                 <AlertDialogAction
-                  type="submit"
-                  form="batch-config-form"
-                  name="operation"
-                  value="clear_history"
                   variant="destructive"
                   disabled={!hasSelection}
+                  onClick={() => void runBatch("clear_history")}
                 >
                   确认清理
                 </AlertDialogAction>
@@ -314,12 +311,9 @@ export function ConfigsTable({ configs, models, returnPath }: ConfigsTableProps)
               <AlertDialogFooter>
                 <AlertDialogCancel>取消</AlertDialogCancel>
                 <AlertDialogAction
-                  type="submit"
-                  form="batch-config-form"
-                  name="operation"
-                  value="delete"
                   variant="destructive"
                   disabled={!hasSelection}
+                  onClick={() => void runBatch("delete")}
                 >
                   确认删除
                 </AlertDialogAction>
