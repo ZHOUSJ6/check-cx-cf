@@ -44,3 +44,13 @@ Thumbs.db
 
 # trellis workspace (keep .trellis committed except workspace journals if private)
 # .trellis/workspace/
+
+# personal / tooling (not pushed)
+.trellis/
+.agents/
+.zcode/
+.react-router/
+worker-configuration.d.ts
+check-*.mjs
+chk-*.mjs
+fix-*.mjs
