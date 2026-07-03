@@ -92,7 +92,7 @@ export function NavUser({
                 <HomeIcon />
                 前台站点
               </DropdownMenuItem>
-              <DropdownMenuItem render={<a href="https://github.com/BingZi-233/check-cx" target="_blank" />}>
+              <DropdownMenuItem render={<a href="https://github.com/ZHOUSJ6/check-cx-cf" target="_blank" />}>
                 <GithubIcon />
                 check-cx 仓库
               </DropdownMenuItem>

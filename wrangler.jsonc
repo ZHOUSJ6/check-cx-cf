@@ -5,14 +5,12 @@
   "compatibility_date": "2025-04-01",
   "compatibility_flags": ["nodejs_compat"],
 
-  // Custom domain: Workers manages DNS record + TLS certificate automatically.
-  // Persisted in config — reapplied on every `wrangler deploy`.
-  "routes": [
-    { "pattern": "cx.020212.xyz", "custom_domain": true }
-  ],
-
-  // Disable the *.workers.dev subdomain; serve only via cx.020212.xyz.
-  "workers_dev": false,
+  // Custom domain: configure via DEPLOY_DOMAIN env var before deploy.
+  // Example: DEPLOY_DOMAIN=cx.example.com pnpm deploy
+  // If not set, defaults to *.workers.dev (workers_dev stays true).
+  // To use a custom domain, set DEPLOY_DOMAIN in wrangler.jsonc or run
+  // the patch script: DEPLOY_DOMAIN=cx.example.com node scripts/patch-wrangler-output.mjs
+  "workers_dev": true,
 
   "vars": {
     "CHECK_POLL_INTERVAL_SECONDS": "60",

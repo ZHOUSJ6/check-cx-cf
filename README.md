@@ -85,7 +85,7 @@ cp .env.example .dev.vars
 | `DATABASE_URL` | Turso 数据库地址 (`libsql://...`) |
 | `DATABASE_AUTH_TOKEN` | Turso 访问令牌 |
 | `BETTER_AUTH_SECRET` | Better Auth 加密密钥 |
-| `BETTER_AUTH_URL` | 部署 URL |
+| `BETTER_AUTH_URL` | 部署 URL（如 `https://your-domain.workers.dev`） |
 | `GITHUB_CLIENT_ID` | GitHub OAuth App Client ID |
 | `GITHUB_CLIENT_SECRET` | GitHub OAuth App Client Secret |
 | `ADMIN_EMAILS` | 初始管理员邮箱（逗号分隔） |
@@ -107,10 +107,14 @@ pnpm dev
 ### 生产部署
 
 ```bash
+# 使用默认 *.workers.dev 子域名
 pnpm deploy
+
+# 或使用自定义域名
+DEPLOY_DOMAIN=cx.example.com pnpm deploy
 ```
 
-自定义域名在 `wrangler.jsonc` 的 `routes` 字段配置。
+自定义域名通过 `DEPLOY_DOMAIN` 环境变量配置，构建脚本会自动注入到 `wrangler.json`。首次部署自定义域名后，Cloudflare 会自动管理 DNS 记录和 TLS 证书。
 
 ## 项目结构
 
