@@ -41,15 +41,12 @@ export function CleanupUnusedModelsButton({ unusedCount }: CleanupUnusedModelsBu
             将删除 {unusedCount} 条当前未被任何配置引用的模型。这个操作不可恢复。
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <form
-          id={formId}
-          action={() => {
-            cleanupUnusedModelsAction()
-          }}
-        />
         <AlertDialogFooter>
           <AlertDialogCancel>取消</AlertDialogCancel>
-          <AlertDialogAction type="submit" form={formId} variant="destructive">
+          <AlertDialogAction
+            variant="destructive"
+            onClick={() => void cleanupUnusedModelsAction().then(() => window.location.reload())}
+          >
             确认清理
           </AlertDialogAction>
         </AlertDialogFooter>

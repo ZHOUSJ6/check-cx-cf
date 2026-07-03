@@ -41,15 +41,12 @@ export function CleanupUnusedTemplatesButton({ unusedCount }: CleanupUnusedTempl
             将删除 {unusedCount} 条当前未被任何模型引用的模板。这个操作不可恢复。
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <form
-          id={formId}
-          action={() => {
-            cleanupUnusedTemplatesAction()
-          }}
-        />
         <AlertDialogFooter>
           <AlertDialogCancel>取消</AlertDialogCancel>
-          <AlertDialogAction type="submit" form={formId} variant="destructive">
+          <AlertDialogAction
+            variant="destructive"
+            onClick={() => void cleanupUnusedTemplatesAction().then(() => window.location.reload())}
+          >
             确认清理
           </AlertDialogAction>
         </AlertDialogFooter>

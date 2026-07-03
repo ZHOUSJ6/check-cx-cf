@@ -22,7 +22,6 @@ type TemplateRowActionsProps = {
 
 export function TemplateRowActions({ id, name, modelCount }: TemplateRowActionsProps) {
   const isDeleteDisabled = modelCount > 0
-  const deleteFormId = `delete-template-${id}`
 
   return (
     <div className="flex items-center gap-2">
@@ -48,17 +47,12 @@ export function TemplateRowActions({ id, name, modelCount }: TemplateRowActionsP
                 将删除模板「{name}」。当前没有模型引用它，但删除后无法恢复。
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <form
-              id={deleteFormId}
-              action={() => {
-                deleteTemplateAction(id)
-              }}
-            >
-              <input type="hidden" name="id" value={id} />
-            </form>
             <AlertDialogFooter>
               <AlertDialogCancel>取消</AlertDialogCancel>
-              <AlertDialogAction type="submit" form={deleteFormId} variant="destructive">
+              <AlertDialogAction
+                variant="destructive"
+                onClick={() => void deleteTemplateAction(id).then(() => window.location.reload())}
+              >
                 确认删除
               </AlertDialogAction>
             </AlertDialogFooter>
