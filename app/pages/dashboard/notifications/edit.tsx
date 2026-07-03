@@ -34,6 +34,11 @@ export default function EditNotificationPage() {
   const success = searchParam("success")
 
   useEffect(() => {
+    const id = notificationIdFromPath()
+    if (!id) {
+      setNotFound(true)
+      return
+    }
     let cancelled = false
     async function load() {
       const res = await adminJson<{ notifications: Record<string, unknown>[] }>(
@@ -51,7 +56,7 @@ export default function EditNotificationPage() {
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [])
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()

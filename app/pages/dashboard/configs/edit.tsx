@@ -49,6 +49,11 @@ export default function EditConfigPage() {
   const success = searchParam("success")
 
   useEffect(() => {
+    const id = configIdFromPath()
+    if (!id) {
+      setNotFound(true)
+      return
+    }
     let cancelled = false
     async function load() {
       const [configsRes, modelsRes, templatesRes] = await Promise.all([
@@ -93,7 +98,7 @@ export default function EditConfigPage() {
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [])
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()

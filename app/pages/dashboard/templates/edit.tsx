@@ -43,6 +43,11 @@ export default function EditTemplatePage() {
   const success = searchParam("success")
 
   useEffect(() => {
+    const id = templateIdFromPath()
+    if (!id) {
+      setNotFound(true)
+      return
+    }
     let cancelled = false
     async function load() {
       const [templatesRes, modelsRes] = await Promise.all([
@@ -77,7 +82,7 @@ export default function EditTemplatePage() {
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [])
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()

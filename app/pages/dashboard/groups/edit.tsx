@@ -33,6 +33,11 @@ export default function EditGroupPage() {
   const success = searchParam("success")
 
   useEffect(() => {
+    const id = groupIdFromPath()
+    if (!id) {
+      setNotFound(true)
+      return
+    }
     let cancelled = false
     async function load() {
       const res = await adminJson<{ groups: Record<string, unknown>[] }>(
@@ -50,7 +55,7 @@ export default function EditGroupPage() {
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [])
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()

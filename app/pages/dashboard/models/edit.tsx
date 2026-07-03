@@ -35,6 +35,11 @@ export default function EditModelPage() {
   const success = searchParam("success")
 
   useEffect(() => {
+    const id = modelIdFromPath()
+    if (!id) {
+      setNotFound(true)
+      return
+    }
     let cancelled = false
     async function load() {
       const [modelsRes, templatesRes, configsRes] = await Promise.all([
@@ -71,7 +76,7 @@ export default function EditModelPage() {
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [])
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
