@@ -98,7 +98,12 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem render={<a href="/auth/sign-out" />}>
+            <DropdownMenuItem render={
+              <button type="button" onClick={() => {
+                fetch('/api/auth/sign-out', { method: 'POST', credentials: 'same-origin', headers: {'Content-Type':'application/json'}, body: '{}' })
+                  .then(() => { window.location.href = '/login'; });
+              }} />
+            }>
               <LogOutIcon />
               退出登录
             </DropdownMenuItem>

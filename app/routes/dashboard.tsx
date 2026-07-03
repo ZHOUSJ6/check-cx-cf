@@ -58,12 +58,16 @@ export default function DashboardLayout() {
                 当前登录：{user.email}
               </p>
             </div>
-            <a
-              href="/api/auth/sign-out"
+            <button
+              type="button"
+              onClick={() => {
+                fetch('/api/auth/sign-out', { method: 'POST', credentials: 'same-origin', headers: {'Content-Type':'application/json'}, body: '{}' })
+                  .then(() => { window.location.href = '/login'; });
+              }}
               className="rounded-md border border-border/40 px-2 py-1 text-[10px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               登出
-            </a>
+            </button>
           </div>
         </header>
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
