@@ -1,57 +1,54 @@
-import { Form, useActionData, useNavigation } from "react-router";
+import { useState } from "react";
 import { Github } from "lucide-react";
 import type { Route } from "./+types/login";
 
-interface ActionResult {
-  error?: string;
-}
-
-// Server action: handle email/password sign-in via Better Auth.
-// (GitHub OAuth is initiated client-side — see the GitHub button onClick.)
-export async function action({ request }: Route.ActionArgs): Promise<ActionResult | Response> {
-  const formData = await request.formData();
-  const email = String(formData.get("email") ?? "");
-  const password = String(formData.get("password") ?? "");
-
-  if (!email || !password) {
-    return { error: "请输入邮箱和密码" };
-  }
-
-  const origin = new URL(request.url).origin;
-  const res = await fetch(`${origin}/api/auth/sign-in/email`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
-
-  if (!res.ok) {
-    const detail = await res.json().catch(() => ({}));
-    return { error: (detail as { message?: string }).message ?? "登录失败" };
-  }
-
-  // Forward the Set-Cookie from the auth response so the browser gets the session.
-  const setCookie = res.headers.get("set-cookie");
-  const headers = new Headers({ Location: "/dashboard" });
-  if (setCookie) {
-    headers.set("set-cookie", setCookie);
-  }
-  return new Response(null, { status: 302, headers });
-}
-
 export default function Login() {
-  const actionData = useActionData<typeof action>();
-  const navigation = useNavigation();
-  const isSubmitting = navigation.state === "submitting";
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  // Initiate GitHub OAuth: call Better Auth's sign-in/social endpoint, then
-  // redirect the browser to the GitHub authorization URL it returns.
+  // Client-side email/password sign-in: call Better Auth API directly so the
+  // Set-Cookie reaches the browser (RRv8 action forwarding was unreliable).
+  async function handleEmailLogin(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    const form = e.currentTarget;
+    const email = (form.elements.namedItem("email") as HTMLInputElement).value;
+    const password = (form.elements.namedItem("password") as HTMLInputElement).value;
+
+    if (!email || !password) {
+      setError("请输入邮箱和密码");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/sign-in/email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) {
+        const detail = await res.json().catch(() => ({}));
+        setError((detail as { message?: string }).message ?? "登录失败");
+        setLoading(false);
+        return;
+      }
+      // Success — session cookie is set by the response. Redirect.
+      window.location.href = "/dashboard";
+    } catch {
+      setError("网络错误，请重试");
+      setLoading(false);
+    }
+  }
+
+  // Initiate GitHub OAuth.
   async function handleGitHub() {
     const res = await fetch("/api/auth/sign-in/social", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ provider: "github", callbackURL: "/dashboard" }),
     });
-    const data = (await res.json()) as { url?: string; redirect?: boolean };
+    const data = (await res.json()) as { url?: string };
     if (data.url) {
       window.location.href = data.url;
     }
@@ -65,7 +62,7 @@ export default function Login() {
           <p className="text-sm text-muted-foreground">后台管理登录</p>
         </div>
 
-        <Form method="post" className="space-y-4">
+        <form onSubmit={handleEmailLogin} className="space-y-4">
           <div className="space-y-1.5">
             <label htmlFor="email" className="text-xs font-medium text-muted-foreground">
               邮箱
@@ -92,18 +89,16 @@ export default function Login() {
             />
           </div>
 
-          {actionData?.error && (
-            <p className="text-sm text-destructive">{actionData.error}</p>
-          )}
+          {error && <p className="text-sm text-destructive">{error}</p>}
 
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={loading}
             className="h-9 w-full rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/80 disabled:opacity-60"
           >
-            {isSubmitting ? "登录中…" : "登录"}
+            {loading ? "登录中…" : "登录"}
           </button>
-        </Form>
+        </form>
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
