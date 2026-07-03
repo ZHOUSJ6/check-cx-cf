@@ -19,7 +19,6 @@ type CleanupUnusedTemplatesButtonProps = {
 }
 
 export function CleanupUnusedTemplatesButton({ unusedCount }: CleanupUnusedTemplatesButtonProps) {
-  const formId = "cleanup-unused-templates"
 
   if (unusedCount === 0) {
     return (

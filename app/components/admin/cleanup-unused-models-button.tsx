@@ -19,7 +19,6 @@ type CleanupUnusedModelsButtonProps = {
 }
 
 export function CleanupUnusedModelsButton({ unusedCount }: CleanupUnusedModelsButtonProps) {
-  const formId = "cleanup-unused-models"
 
   if (unusedCount === 0) {
     return (
